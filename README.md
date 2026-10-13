@@ -1,22 +1,14 @@
 # postgres-db
 
-Helm chart chạy PostgreSQL trên Kubernetes bằng [CloudNativePG](https://cloudnative-pg.io). Chart này không tự viết template mà dùng lại chart có sẵn [`cnpg/cluster`](https://github.com/cloudnative-pg/charts/tree/main/charts/cluster) (0.9.0) làm dependency.
+Helm chart chạy PostgreSQL trên Kubernetes. Chart này không tự viết template mà dùng lại chart [`bitnami/postgresql`](https://artifacthub.io/packages/helm/bitnami/postgresql) (18.12.4, lấy từ `oci://registry-1.docker.io/bitnamicharts`) làm dependency.
 
 Cấu hình mặc định (xem [values.yaml](values.yaml)):
 
-- PostgreSQL 17, 1 instance, ổ 5Gi (StorageClass mặc định)
-- Database `app`, owner `app`
-- Không bật superuser, backup và monitoring
+- PostgreSQL 18, chạy 1 instance (`standalone`), ổ 5Gi dùng StorageClass mặc định
+- Database `app`, user `app`
+- Không bật metrics
 
-## Yêu cầu
-
-Cluster phải có sẵn operator CloudNativePG, vì chart này chỉ tạo resource `Cluster`:
-
-```bash
-helm repo add cnpg https://cloudnative-pg.github.io/charts
-helm upgrade --install cnpg cnpg/cloudnative-pg --version 0.29.1 \
-  --namespace cnpg-system --create-namespace
-```
+> **Lưu ý về image:** từ 2025 Bitnami chỉ phát hành miễn phí tag `latest` của image `bitnami/postgresql`, nên chart này đang chạy `postgresql:latest`. Image sẽ thay đổi mỗi khi pod được tạo lại. Nếu cần cố định, hãy ghi đè `postgresql.image.digest` bằng digest cụ thể.
 
 ## Cài đặt
 
@@ -29,22 +21,17 @@ Thường thì chart này được cài qua umbrella chart `scs` chứ không c�
 
 ## Kết nối
 
-Với release tên `<release>`, CloudNativePG tạo:
+Với release tên `<release>`, chart tạo:
 
 | Resource | Tên |
 | --- | --- |
-| Service đọc/ghi (primary) | `<release>-cluster-rw` |
-| Service chỉ đọc | `<release>-cluster-ro` |
-| Secret user `app` | `<release>-cluster-app` (các key `username`, `password`, `uri`, ...) |
+| Service | `<release>-postgresql` (port 5432) |
+| Secret | `<release>-postgresql` (các key `password` cho user `app`, `postgres-password` cho user `postgres`) |
 
-Lấy mật khẩu:
-
-```bash
-kubectl get secret <release>-cluster-app -n homelab -o jsonpath='{.data.password}' | base64 -d
-```
-
-Kiểm tra kết nối:
+Lấy mật khẩu của user `app`:
 
 ```bash
-helm test <release> -n homelab
+kubectl get secret <release>-postgresql -n homelab -o jsonpath='{.data.password}' | base64 -d
 ```
+
+Mật khẩu được sinh ngẫu nhiên khi cài lần đầu. Để tránh bị đổi khi upgrade, hãy tạo Secret trước rồi trỏ tới nó bằng `postgresql.auth.existingSecret`.

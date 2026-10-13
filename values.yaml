@@ -1,32 +1,26 @@
-# Giá trị truyền xuống chart cnpg/cluster.
-# Xem đầy đủ: https://github.com/cloudnative-pg/charts/blob/main/charts/cluster/values.yaml
-cluster:
-  type: postgresql
-  mode: standalone
-  version:
-    postgresql: "17"
+# Giá trị truyền xuống chart bitnami/postgresql.
+# Xem đầy đủ: https://artifacthub.io/packages/helm/bitnami/postgresql?modal=values
+postgresql:
+  architecture: standalone
 
-  cluster:
-    # Homelab: 1 instance là đủ. Tăng lên 3 nếu có nhiều node.
-    instances: 1
-    storage:
+  auth:
+    database: app
+    username: app
+    # Để trống thì chart tự sinh mật khẩu và lưu vào Secret.
+    # Nên trỏ tới Secret có sẵn để mật khẩu không đổi khi upgrade:
+    # existingSecret: postgres-db-auth
+
+  primary:
+    persistence:
       size: 5Gi
       # Để trống = dùng StorageClass mặc định của cluster.
       storageClass: ""
-    # Tắt PDB khi chỉ có 1 instance, nếu không sẽ chặn drain node.
-    enablePDB: false
-    enableSuperuserAccess: false
-    initdb:
-      database: app
-      owner: app
     resources:
       requests:
         cpu: 100m
         memory: 256Mi
       limits:
         memory: 512Mi
-    monitoring:
-      enabled: false
 
-  backups:
+  metrics:
     enabled: false

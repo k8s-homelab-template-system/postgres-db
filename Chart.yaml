@@ -1,11 +1,12 @@
 apiVersion: v2
 name: postgres-db
-description: PostgreSQL cho homelab, chạy bằng CloudNativePG (wrap chart cnpg/cluster)
+description: PostgreSQL cho homelab (wrap chart bitnami/postgresql)
 type: application
-version: 0.1.0
-appVersion: "17"
+version: 0.2.0
+appVersion: "18.6.0"
 
 dependencies:
-  - name: cluster
-    version: 0.9.0
-    repository: https://cloudnative-pg.github.io/charts
+  # https://artifacthub.io/packages/helm/bitnami/postgresql
+  - name: postgresql
+    version: 18.12.4
+    repository: oci://registry-1.docker.io/bitnamicharts
