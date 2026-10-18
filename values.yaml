@@ -11,6 +11,10 @@ postgresql:
     secretKeys:
       adminPasswordKey: postgres-password
       userPasswordKey: password
+    # Không ghi mật khẩu vào đây: giá trị được đọc từ Secret đang có trong cluster lúc deploy.
+    # Chart bitnami bắt buộc biết mật khẩu hiện tại khi upgrade (PASSWORDS ERROR), kể cả khi
+    # dùng existingSecret mà Secret đó chưa tồn tại (lần đầu chuyển từ Secret <release>-postgresql).
+    password: '{{ include "homelab.postgres-db.storedCredential" (dict "secret" (tpl .Values.auth.existingSecret .) "legacySecret" (printf "%s-postgresql" .Release.Name) "key" "password" "context" .) }}'
 
   primary:
     persistence:
