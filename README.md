@@ -26,12 +26,22 @@ Với release tên `<release>`, chart tạo:
 | Resource | Tên |
 | --- | --- |
 | Service | `<release>-postgresql` (port 5432) |
-| Secret | `<release>-postgresql` (các key `password` cho user `app`, `postgres-password` cho user `postgres`) |
+| Secret | `<release>-postgresql-auth` (key `password` cho user `app`, `postgres-password` cho user `postgres`) |
 
 Lấy mật khẩu của user `app`:
 
 ```bash
-kubectl get secret <release>-postgresql -n homelab -o jsonpath='{.data.password}' | base64 -d
+kubectl get secret <release>-postgresql-auth -n homelab -o jsonpath='{.data.password}' | base64 -d
 ```
 
-Mật khẩu được sinh ngẫu nhiên khi cài lần đầu. Để tránh bị đổi khi upgrade, hãy tạo Secret trước rồi trỏ tới nó bằng `postgresql.auth.existingSecret`.
+## Credential
+
+Mật khẩu nằm trong Secret `<release>-postgresql-auth`, do chart này tạo ([templates/auth-secret.yaml](templates/auth-secret.yaml)). Không có credential nào trong git.
+
+- Sinh ngẫu nhiên khi cài lần đầu, giữ nguyên khi upgrade (`lookup` Secret đang có).
+- Nếu đã có Secret cũ `<release>-postgresql` (chart <= 0.2.x), mật khẩu được lấy lại từ đó để khớp dữ liệu trên PVC.
+- Có annotation `helm.sh/resource-policy: keep`: gỡ release vẫn giữ Secret, cài lại dùng đúng mật khẩu cũ.
+
+Đổi mật khẩu: sửa Secret rồi đổi mật khẩu trong PostgreSQL (`ALTER USER app PASSWORD ...`) cho khớp, sau đó restart pod.
+
+Tự quản lý Secret (kubectl, Sealed Secrets, External Secrets...): đặt `authSecret.create: false` và tạo Secret tên `<release>-postgresql-auth` với 2 key trên, hoặc trỏ `postgresql.auth.existingSecret` sang tên khác.

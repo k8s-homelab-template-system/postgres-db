@@ -6,9 +6,11 @@ postgresql:
   auth:
     database: app
     username: app
-    # Để trống thì chart tự sinh mật khẩu và lưu vào Secret.
-    # Nên trỏ tới Secret có sẵn để mật khẩu không đổi khi upgrade:
-    # existingSecret: postgres-db-auth
+    # Mật khẩu nằm trong Secret <release>-postgresql-auth (xem authSecret ở cuối file).
+    existingSecret: '{{ .Release.Name }}-postgresql-auth'
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
 
   primary:
     persistence:
@@ -24,3 +26,9 @@ postgresql:
 
   metrics:
     enabled: false
+
+# Secret credential do chart này tạo (templates/auth-secret.yaml), tên lấy từ
+# postgresql.auth.existingSecret. Key: postgres-password (user postgres), password (user app).
+# create: false nếu tự quản lý Secret đó (tạo bằng kubectl, Sealed Secrets, External Secrets...).
+authSecret:
+  create: true
